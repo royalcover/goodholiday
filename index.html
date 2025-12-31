@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>好傢在年終慶 - 繽紛大轉盤</title>
+    <style>
+        :root {
+            --primary-red: #d32f2f;
+            --gold-gradient: linear-gradient(180deg, #ffd700, #ff8c00);
+            --bg-color: #9e0000;
+        }
+        body { 
+            text-align: center; font-family: "Microsoft JhengHei", sans-serif; 
+            background-color: var(--bg-color);
+            background: radial-gradient(circle, #ce0000 0%, #7a0000 100%);
+            color: #fff; margin: 0; padding: 20px;
+        }
+        .container { max-width: 450px; margin: 0 auto; position: relative; }
+        .title { font-size: 32px; font-weight: bold; color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.8); margin-bottom: 5px; }
+        .promo-tag { background: #ffd700; color: #b30000; display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        
+        .wheel-wrapper { position: relative; width: 340px; margin: 0 auto; padding: 15px; background: #550000; border-radius: 50%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        /* 跑馬燈裝飾 */
+        .wheel-wrapper::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border: 10px dotted #ffd700; border-radius: 50%; animation: blink 1s infinite; pointer-events: none;
+        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        #wheel { width: 100%; height: auto; border-radius: 50%; background: #fff; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        #pointer { 
+            position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent;
+            border-top: 40px solid #ffd700; z-index: 100; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+        }
+        
+        #spin-btn { 
+            margin-top: 30px; padding: 15px 70px; font-size: 24px; font-weight: bold;
+            background: var(--gold-gradient); color: #b30000; border: none; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 6px 0 #8a0000; transition: 0.1s;
+        }
+        #spin-btn:active { transform: translateY(4px); box-shadow: none; }
+        #spin-btn:disabled { background: #666; color: #aaa; box-shadow: none; }
+
+        .footer-note { font-size: 13px; margin-top: 30px; line-height: 1.6; opacity: 0.9; }
+        .legal { font-size: 11px; margin-top: 20px; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title">🏠 好傢在年終慶</div>
+    <div class="promo-tag">🧧 凡消費滿兩千即可抽獎一次</div>
+    
+    <div class="wheel-wrapper">
+        <div id="pointer"></div>
+        <canvas id="wheel" width="500" height="500"></canvas>
+    </div>
+    
+    <button id="spin-btn" onclick="spinWheel()">點我抽大獎</button>
+    
+    <div class="footer-note">
+        ※ 中獎請務必【截圖憑證】<br>至全台門市出示核銷領取
+    </div>
+    
+    <div class="legal">
+        本次抽獎活動辦法最終解釋權歸好傢在有限公司所有
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    
+    // 獎項設定與機率 (已調低毛毯權重)
+    const prizes = [
+        { name: "尊爵床墊", weight: 1 },
+        { name: "65吋電視", weight: 1 },
+        { name: "電動沙發", weight: 1 },
+        { name: "石墨烯被", weight: 5 },
+        { name: "按摩家電", weight: 5 },
+        { name: "記憶床墊", weight: 5 },
+        { name: "暖冬毛毯", weight: 60 },  // 已從120調低至60
+        { name: "優質濕紙巾", weight: 930 } // 提升保底機率
+    ];
+
+    const colors = ["#e63946", "#ffffff", "#e63946", "#ffffff", "#e63946", "#ffffff", "#e63946", "#ffffff"];
+    const textColors = ["#fff", "#e63946", "#fff", "#e63946", "#fff", "#e63946", "#fff", "#e63946"];
+    
+    let isSpinning = false;
+    const arcSize = (2 * Math.PI) / prizes.length;
+
+    function drawWheel() {
+        ctx.clearRect(0, 0, 500, 500);
+        for (let i = 0; i < prizes.length; i++) {
+            const angle = i * arcSize - (Math.PI / 2) - (arcSize / 2);
+            ctx.beginPath();
+            ctx.fillStyle = colors[i];
+            ctx.moveTo(250, 250);
+            ctx.arc(250, 250, 245, angle, angle + arcSize);
+            ctx.fill();
+            
+            ctx.save();
+            ctx.translate(250, 250);
+            ctx.rotate(angle + arcSize / 2);
+            ctx.fillStyle = textColors[i];
+            ctx.font = "bold 24px Microsoft JhengHei";
+            ctx.textAlign = "right";
+            ctx.fillText(prizes[i].name, 220, 10);
+            ctx.restore();
+        }
+        
+        // 中心圓裝飾
+        ctx.beginPath();
+        ctx.fillStyle = "#ffd700";
+        ctx.arc(250, 250, 20, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+        document.getElementById('spin-btn').disabled = true;
+
+        const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
+        let random = Math.random() * totalWeight;
+        let selectedIndex = 0;
+        for (let i = 0; i < prizes.length; i++) {
+            random -= prizes[i].weight;
+            if (random <= 0) {
+                selectedIndex = i;
+                break;
+            }
+        }
+
+        const segmentDeg = 360 / prizes.length;
+        const targetDeg = 360 - (selectedIndex * segmentDeg);
+        const totalRotation = 360 * 10 + targetDeg; // 旋轉10圈
+
+        canvas.style.transition = "transform 5s cubic-bezier(0.15, 0, 0.15, 1)";
+        canvas.style.transform = `rotate(${totalRotation}deg)`;
+
+        setTimeout(() => {
+            alert("🎊 恭喜您！\n獲得獎項：【" + prizes[selectedIndex].name + "】\n\n請截圖此畫面並至門市兌換領取！");
+            
+            canvas.style.transition = "none";
+            canvas.style.transform = `rotate(${totalRotation % 360}deg)`;
+            
+            isSpinning = false;
+            document.getElementById('spin-btn').disabled = false;
+        }, 5500);
+    }
+
+    drawWheel();
+</script>
+
+</body>
+</html>
